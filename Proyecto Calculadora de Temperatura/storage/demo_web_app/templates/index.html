@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conversor Celsius a Fahrenheit</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            transform: translateY(0);
+            transition: transform 0.3s ease;
+        }
+
+        .container:hover {
+            transform: translateY(-5px);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+
+        .thermometer {
+            font-size: 3em;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+            font-size: 1.1em;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1.2em;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .api-config {
+            margin-bottom: 25px;
+        }
+
+        input[type="url"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="url"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            margin: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 15px;
+            font-size: 1.3em;
+            font-weight: 600;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .result.success {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            animation: slideIn 0.5s ease;
+        }
+
+        .result.error {
+            background: linear-gradient(45deg, #f44336, #d32f2f);
+            color: white;
+            animation: shake 0.5s ease;
+        }
+
+        .result.loading {
+            background: linear-gradient(45deg, #2196F3, #1976D2);
+            color: white;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 3px solid white;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .history {
+            margin-top: 30px;
+            text-align: left;
+        }
+
+        .history h3 {
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .history-item {
+            background: rgba(102, 126, 234, 0.1);
+            padding: 10px 15px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            font-size: 0.95em;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 30px 20px;
+                margin: 10px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .thermometer {
+                font-size: 2.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="thermometer">🌡️</div>
+        <h1>Conversor de Temperatura</h1>
+        
+        <div class="api-config">
+            <label for="apiUrl">API:</label>
+            <input type="url" id="apiUrl" placeholder="http://localhost/api/conversiones/temperatura" 
+                   value="http://localhost/api/conversiones/temperatura">
+            <small style="display: block; margin-top: 5px; color: #666;">
+                📋 Docs de tu API: <a href="http://localhost/docs#/" target="_blank">http://localhost/docs#/</a><br>
+                ✅ Endpoint configurado para FastAPI
+            </small>
+        </div>
+
+        <form id="converterForm">
+            <div class="form-group">
+                <label for="celsius">Temperatura en Celsius (°C):</label>
+                <input type="number" id="celsius" step="0.1" placeholder="Ej: 25.5" required>
+            </div>
+            
+            <button type="submit" id="convertBtn">🔄 Convertir</button>
+            <button type="button" id="testBtn">🔍 Probar API</button>
+            <button type="button" id="clearBtn">🗑️ Limpiar</button>
+        </form>
+
+        <div id="result" class="result" style="display: none;"></div>
+
+        <div class="history" id="historySection" style="display: none;">
+            <h3>📋 Historial de Conversiones</h3>
+            <div id="historyList"></div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let conversions = [];
+        
+        // Elementos del DOM
+        const form = document.getElementById('converterForm');
+        const celsiusInput = document.getElementById('celsius');
+        const apiUrlInput = document.getElementById('apiUrl');
+        const convertBtn = document.getElementById('convertBtn');
+        const testBtn = document.getElementById('testBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const resultDiv = document.getElementById('result');
+        const historySection = document.getElementById('historySection');
+        const historyList = document.getElementById('historyList');
+
+        // Event listeners
+        form.addEventListener('submit', handleConversion);
+        testBtn.addEventListener('click', testApiConnection);
+        clearBtn.addEventListener('click', clearForm);
+
+        // Función para probar la conexión con la API
+        async function testApiConnection() {
+            const apiUrl = apiUrlInput.value.trim();
+            
+            if (!apiUrl) {
+                showResult('Por favor ingresa la URL de tu API primero', 'error');
+                return;
+            }
+
+            showResult('<div class="spinner"></div>Probando conexión con la API...', 'loading');
+            testBtn.disabled = true;
+
+            console.log('🔍 Probando conexión con:', apiUrl);
+
+            try {
+                // Intentar una petición GET primero para probar conectividad
+                const testResponse = await fetch(apiUrl.replace('/convert', ''), {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                
+                console.log('📡 Respuesta de prueba:', testResponse.status);
+                
+                // Luego probar el endpoint específico con datos de prueba
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        resultado: 32.00,  // 0°C = 32°F
+                        tipo: "Celsius a Fahrenheit",
+                        registro: new Date().toISOString()
+                    })
+                });
+
+                console.log('📡 Respuesta del endpoint:', response.status, response.statusText);
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult(
+                        `✅ ¡Conexión exitosa con la API!<br>
+                         <small>Estado: ${response.status} ${response.statusText}</small><br>
+                         <small>Tu API está funcionando correctamente</small>`, 
+                        'success'
+                    );
+                    console.log('✅ Datos de prueba recibidos:', data);
+                } else {
+                    const errorText = await response.text();
+                    showResult(
+                        `⚠️ API responde pero con error<br>
+                         <small>Estado: ${response.status} ${response.statusText}</small><br>
+                         <small>Revisa la configuración de tu endpoint</small>`, 
+                        'error'
+                    );
+                    console.log('⚠️ Error del servidor:', errorText);
+                }
+
+            } catch (error) {
+                console.error('❌ Error de conexión:', error);
+                
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    showResult(
+                        `❌ No se puede conectar con la API<br>
+                         <small>• Verifica que la API esté corriendo</small><br>
+                         <small>• URL: ${apiUrl}</small><br>
+                         <small>• Revisa puertos y firewall</small>`, 
+                        'error'
+                    );
+                } else {
+                    showResult(
+                        `❌ Error de conexión:<br>
+                         <small>${error.message}</small>`, 
+                        'error'
+                    );
+                }
+            } finally {
+                testBtn.disabled = false;
+            }
+        }
+
+        // Función principal para manejar la conversión
+        async function handleConversion(e) {
+            e.preventDefault();
+            
+            const celsius = parseFloat(celsiusInput.value);
+            const apiUrl = apiUrlInput.value.trim();
+            
+            if (isNaN(celsius)) {
+                showResult('Por favor ingresa un valor numérico válido', 'error');
+                return;
+            }
+            
+            if (!apiUrl) {
+                showResult('Por favor ingresa la URL de tu API', 'error');
+                return;
+            }
+
+            // Mostrar estado de carga
+            showResult('<div class="spinner"></div>Enviando datos a la API...', 'loading');
+            convertBtn.disabled = true;
+
+            console.log('🔍 Diagnóstico de conexión:');
+            console.log('URL de API:', apiUrl);
+            console.log('Datos a enviar:', { celsius: celsius, timestamp: new Date().toISOString() });
+
+            try {
+                // Calcular Fahrenheit antes de enviar
+                const fahrenheit = (celsius * 9/5) + 32;
+                
+                // Realizar petición POST a la API con el formato correcto
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        resultado: parseFloat(fahrenheit.toFixed(2)), // Decimal con 2 decimales
+                        tipo: "Celsius a Fahrenheit",
+                        registro: new Date().toISOString() // Timestamp ISO
+                    })
+                });
+
+                console.log('📡 Respuesta de la API:', response.status, response.statusText);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.log('📄 Contenido del error:', errorText);
+                    throw new Error(`Error HTTP: ${response.status} - ${response.statusText}\nDetalle: ${errorText}`);
+                }
+
+                const data = await response.json();
+                console.log('✅ Datos recibidos:', data);
+                
+                // Mostrar resultado exitoso
+                showResult(
+                    `✅ Conversión exitosa!<br>
+                     <strong>${celsius}°C = ${fahrenheit.toFixed(2)}°F</strong><br>
+                     <small>Guardado en BD - ID: ${data.id}</small><br>
+                     <small>Fecha: ${new Date(data.registro).toLocaleString()}</small>`, 
+                    'success'
+                );
+
+                // Agregar al historial
+                addToHistory(celsius, fahrenheit);
+
+            } catch (error) {
+                console.error('❌ Error completo:', error);
+                
+                let errorMessage = '';
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    errorMessage = `❌ No se puede conectar con la API<br>
+                                   <small>Posibles causas:</small><br>
+                                   <small>• La API no está corriendo</small><br>
+                                   <small>• URL incorrecta: ${apiUrl}</small><br>
+                                   <small>• Problema de CORS</small><br>
+                                   <small>• Firewall bloqueando la conexión</small>`;
+                } else if (error.message.includes('CORS')) {
+                    errorMessage = `❌ Error de CORS<br>
+                                   <small>Tu API necesita configurar headers CORS</small><br>
+                                   <small>Revisa la consola para más detalles</small>`;
+                } else {
+                    errorMessage = `❌ Error al conectar con la API:<br>
+                                   <small>${error.message}</small><br>
+                                   <small>Revisa la consola (F12) para más detalles</small>`;
+                }
+                
+                showResult(errorMessage, 'error');
+            } finally {
+                convertBtn.disabled = false;
+            }
+        }
+
+        // Función para mostrar resultados
+        function showResult(message, type) {
+            resultDiv.innerHTML = message;
+            resultDiv.className = `result ${type}`;
+            resultDiv.style.display = 'flex';
+            
+            // Auto-ocultar después de 5 segundos si es un mensaje de carga
+            if (type === 'loading') {
+                setTimeout(() => {
+                    if (resultDiv.className.includes('loading')) {
+                        resultDiv.style.display = 'none';
+                    }
+                }, 5000);
+            }
+        }
+
+        // Función para agregar al historial
+        function addToHistory(celsius, fahrenheit) {
+            const now = new Date();
+            const timeString = now.toLocaleString('es-ES');
+            
+            conversions.unshift({
+                celsius: celsius,
+                fahrenheit: fahrenheit,
+                timestamp: timeString
+            });
+
+            // Mantener solo las últimas 10 conversiones
+            if (conversions.length > 10) {
+                conversions = conversions.slice(0, 10);
+            }
+
+            updateHistoryDisplay();
+        }
+
+        // Función para actualizar la visualización del historial
+        function updateHistoryDisplay() {
+            if (conversions.length === 0) {
+                historySection.style.display = 'none';
+                return;
+            }
+
+            historySection.style.display = 'block';
+            historyList.innerHTML = conversions.map(conversion => 
+                `<div class="history-item">
+                    <strong>${conversion.celsius}°C → ${conversion.fahrenheit.toFixed(1)}°F</strong>
+                    <br><small>${conversion.timestamp}</small>
+                </div>`
+            ).join('');
+        }
+
+        // Función para limpiar el formulario
+        function clearForm() {
+            celsiusInput.value = '';
+            resultDiv.style.display = 'none';
+            celsiusInput.focus();
+        }
+
+        // Enfocar el input al cargar la página
+        window.addEventListener('load', () => {
+            celsiusInput.focus();
+        });
+
+        // Permitir conversión con Enter
+        celsiusInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleConversion(e);
+            }
+        });
+    </script>
+</body>
+</html>
