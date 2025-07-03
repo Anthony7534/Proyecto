@@ -103,6 +103,24 @@
             border-color: #667eea;
         }
 
+        /* Estilos para el selector de conversión */
+        select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1.2em;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            background: rgba(255, 255, 255, 0.9);
+            cursor: pointer;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 15px rgba(102, 126, 234, 0.3);
+        }
+
         button {
             background: linear-gradient(45deg, #667eea, #764ba2);
             color: white;
@@ -204,6 +222,48 @@
             font-size: 0.95em;
         }
 
+        .db-history {
+            margin-top: 30px;
+            text-align: left;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .db-history h3 {
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 10px 0;
+            z-index: 1;
+        }
+
+        .db-history-item {
+            background: rgba(118, 75, 162, 0.1);
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #764ba2;
+            font-size: 0.95em;
+            transition: all 0.3s ease;
+        }
+
+        .db-history-item:hover {
+            background: rgba(118, 75, 162, 0.2);
+            transform: translateX(5px);
+        }
+
+        .db-history-stats {
+            background: linear-gradient(45deg, #764ba2, #667eea);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
         @media (max-width: 600px) {
             .container {
                 padding: 30px 20px;
@@ -237,12 +297,24 @@
 
         <form id="converterForm">
             <div class="form-group">
-                <label for="celsius">Temperatura en Celsius (°C):</label>
-                <input type="number" id="celsius" step="0.1" placeholder="Ej: 25.5" required>
+                <label for="conversionType">Tipo de Conversión:</label>
+                <select id="conversionType" required>
+                    <option value="celsius-fahrenheit">Celsius a Fahrenheit</option>
+                    <option value="fahrenheit-celsius">Fahrenheit a Celsius</option>
+                    <option value="celsius-kelvin">Celsius a Kelvin</option>
+                    <option value="kelvin-celsius">Kelvin a Celsius</option>
+                    <option value="fahrenheit-kelvin">Fahrenheit a Kelvin</option>
+                    <option value="kelvin-fahrenheit">Kelvin a Fahrenheit</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="temperature" id="temperatureLabel">Temperatura en Celsius (°C):</label>
+                <input type="number" id="temperature" step="0.1" placeholder="Ej: 25.5" required>
             </div>
             
             <button type="submit" id="convertBtn">🔄 Convertir</button>
-            <button type="button" id="testBtn">🔍 Probar API</button>
+            <button type="button" id="historyBtn">📊 Ver Historial BD</button>
             <button type="button" id="clearBtn">🗑️ Limpiar</button>
         </form>
 
@@ -252,30 +324,128 @@
             <h3>📋 Historial de Conversiones</h3>
             <div id="historyList"></div>
         </div>
+
+        <div class="db-history" id="dbHistorySection" style="display: none;">
+            <div class="db-history-stats" id="historyStats"></div>
+            <h3>🗃️ Historial Completo de Base de Datos</h3>
+            <div id="dbHistoryList"></div>
+        </div>
     </div>
 
     <script>
         // Variables globales
         let conversions = [];
+        let dbHistoryVisible = false;
         
         // Elementos del DOM
         const form = document.getElementById('converterForm');
-        const celsiusInput = document.getElementById('celsius');
+        const temperatureInput = document.getElementById('temperature');
+        const temperatureLabel = document.getElementById('temperatureLabel');
+        const conversionTypeSelect = document.getElementById('conversionType');
         const apiUrlInput = document.getElementById('apiUrl');
         const convertBtn = document.getElementById('convertBtn');
-        const testBtn = document.getElementById('testBtn');
+        const historyBtn = document.getElementById('historyBtn');
         const clearBtn = document.getElementById('clearBtn');
         const resultDiv = document.getElementById('result');
         const historySection = document.getElementById('historySection');
         const historyList = document.getElementById('historyList');
+        const dbHistorySection = document.getElementById('dbHistorySection');
+        const dbHistoryList = document.getElementById('dbHistoryList');
+        const historyStats = document.getElementById('historyStats');
 
         // Event listeners
         form.addEventListener('submit', handleConversion);
-        testBtn.addEventListener('click', testApiConnection);
+        historyBtn.addEventListener('click', toggleDbHistory);
         clearBtn.addEventListener('click', clearForm);
+        conversionTypeSelect.addEventListener('change', updateLabels);
 
-        // Función para probar la conexión con la API
-        async function testApiConnection() {
+        // Función para actualizar etiquetas según el tipo de conversión
+        function updateLabels() {
+            const conversionType = conversionTypeSelect.value;
+            const conversions = {
+                'celsius-fahrenheit': { label: 'Temperatura en Celsius (°C)', placeholder: 'Ej: 25.5' },
+                'fahrenheit-celsius': { label: 'Temperatura en Fahrenheit (°F)', placeholder: 'Ej: 77.9' },
+                'celsius-kelvin': { label: 'Temperatura en Celsius (°C)', placeholder: 'Ej: 25.5' },
+                'kelvin-celsius': { label: 'Temperatura en Kelvin (K)', placeholder: 'Ej: 298.65' },
+                'fahrenheit-kelvin': { label: 'Temperatura en Fahrenheit (°F)', placeholder: 'Ej: 77.9' },
+                'kelvin-fahrenheit': { label: 'Temperatura en Kelvin (K)', placeholder: 'Ej: 298.65' }
+            };
+
+            const config = conversions[conversionType];
+            temperatureLabel.textContent = config.label;
+            temperatureInput.placeholder = config.placeholder;
+        }
+
+        // Función para convertir temperaturas
+        function convertTemperature(value, type) {
+            let result, resultUnit, sourceUnit;
+            
+            switch(type) {
+                case 'celsius-fahrenheit':
+                    result = (value * 9/5) + 32;
+                    resultUnit = 'F';
+                    sourceUnit = 'C';
+                    break;
+                case 'fahrenheit-celsius':
+                    result = (value - 32) * 5/9;
+                    resultUnit = 'C';
+                    sourceUnit = 'F';
+                    break;
+                case 'celsius-kelvin':
+                    result = value + 273.15;
+                    resultUnit = 'K';
+                    sourceUnit = 'C';
+                    break;
+                case 'kelvin-celsius':
+                    result = value - 273.15;
+                    resultUnit = 'C';
+                    sourceUnit = 'K';
+                    break;
+                case 'fahrenheit-kelvin':
+                    result = (value - 32) * 5/9 + 273.15;
+                    resultUnit = 'K';
+                    sourceUnit = 'F';
+                    break;
+                case 'kelvin-fahrenheit':
+                    result = (value - 273.15) * 9/5 + 32;
+                    resultUnit = 'F';
+                    sourceUnit = 'K';
+                    break;
+                default:
+                    throw new Error('Tipo de conversión no válido');
+            }
+
+            return { result, resultUnit, sourceUnit };
+        }
+
+        // Función para obtener el nombre descriptivo de la conversión
+        function getConversionTypeName(type) {
+            const names = {
+                'celsius-fahrenheit': 'Celsius a Fahrenheit',
+                'fahrenheit-celsius': 'Fahrenheit a Celsius',
+                'celsius-kelvin': 'Celsius a Kelvin',
+                'kelvin-celsius': 'Kelvin a Celsius',
+                'fahrenheit-kelvin': 'Fahrenheit a Kelvin',
+                'kelvin-fahrenheit': 'Kelvin a Fahrenheit'
+            };
+            return names[type] || 'Conversión desconocida';
+        }
+
+        // Función para alternar la visibilidad del historial de BD
+        async function toggleDbHistory() {
+            if (dbHistoryVisible) {
+                // Ocultar historial
+                dbHistorySection.style.display = 'none';
+                historyBtn.innerHTML = '📊 Ver Historial BD';
+                dbHistoryVisible = false;
+            } else {
+                // Mostrar historial
+                await loadDbHistory();
+            }
+        }
+
+        // Función para cargar el historial completo de la base de datos
+        async function loadDbHistory() {
             const apiUrl = apiUrlInput.value.trim();
             
             if (!apiUrl) {
@@ -283,87 +453,107 @@
                 return;
             }
 
-            showResult('<div class="spinner"></div>Probando conexión con la API...', 'loading');
-            testBtn.disabled = true;
+            // Mostrar estado de carga
+            historyBtn.innerHTML = '<div class="spinner"></div>Cargando...';
+            historyBtn.disabled = true;
 
-            console.log('🔍 Probando conexión con:', apiUrl);
+            console.log('📊 Cargando historial desde:', apiUrl);
 
             try {
-                // Intentar una petición GET primero para probar conectividad
-                const testResponse = await fetch(apiUrl.replace('/convert', ''), {
-                    method: 'GET',
-                    mode: 'cors'
-                });
-                
-                console.log('📡 Respuesta de prueba:', testResponse.status);
-                
-                // Luego probar el endpoint específico con datos de prueba
+                // Realizar petición GET para obtener todos los registros
                 const response = await fetch(apiUrl, {
-                    method: 'POST',
+                    method: 'GET',
                     headers: {
-                        'Content-Type': 'application/json',
                         'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        resultado: 32.00,  // 0°C = 32°F
-                        tipo: "Celsius a Fahrenheit",
-                        registro: new Date().toISOString()
-                    })
+                    }
                 });
 
-                console.log('📡 Respuesta del endpoint:', response.status, response.statusText);
+                console.log('📡 Respuesta del historial:', response.status, response.statusText);
 
-                if (response.ok) {
-                    const data = await response.json();
-                    showResult(
-                        `✅ ¡Conexión exitosa con la API!<br>
-                         <small>Estado: ${response.status} ${response.statusText}</small><br>
-                         <small>Tu API está funcionando correctamente</small>`, 
-                        'success'
-                    );
-                    console.log('✅ Datos de prueba recibidos:', data);
-                } else {
+                if (!response.ok) {
                     const errorText = await response.text();
-                    showResult(
-                        `⚠️ API responde pero con error<br>
-                         <small>Estado: ${response.status} ${response.statusText}</small><br>
-                         <small>Revisa la configuración de tu endpoint</small>`, 
-                        'error'
-                    );
-                    console.log('⚠️ Error del servidor:', errorText);
+                    throw new Error(`Error HTTP: ${response.status} - ${response.statusText}\nDetalle: ${errorText}`);
                 }
+
+                const data = await response.json();
+                console.log('✅ Historial recibido:', data);
+                
+                // Mostrar el historial
+                displayDbHistory(data);
+                dbHistorySection.style.display = 'block';
+                historyBtn.innerHTML = '🙈 Ocultar Historial';
+                dbHistoryVisible = true;
 
             } catch (error) {
-                console.error('❌ Error de conexión:', error);
+                console.error('❌ Error al cargar historial:', error);
                 
+                let errorMessage = '';
                 if (error.name === 'TypeError' && error.message.includes('fetch')) {
-                    showResult(
-                        `❌ No se puede conectar con la API<br>
-                         <small>• Verifica que la API esté corriendo</small><br>
-                         <small>• URL: ${apiUrl}</small><br>
-                         <small>• Revisa puertos y firewall</small>`, 
-                        'error'
-                    );
+                    errorMessage = `❌ No se puede conectar con la API<br>
+                                   <small>• Verifica que la API esté corriendo</small><br>
+                                   <small>• URL: ${apiUrl}</small><br>
+                                   <small>• Endpoint GET debe estar disponible</small>`;
                 } else {
-                    showResult(
-                        `❌ Error de conexión:<br>
-                         <small>${error.message}</small>`, 
-                        'error'
-                    );
+                    errorMessage = `❌ Error al cargar historial:<br>
+                                   <small>${error.message}</small>`;
                 }
+                
+                showResult(errorMessage, 'error');
             } finally {
-                testBtn.disabled = false;
+                historyBtn.innerHTML = '📊 Ver Historial BD';
+                historyBtn.disabled = false;
             }
+        }
+
+        // Función para mostrar el historial de la base de datos
+        function displayDbHistory(data) {
+            if (!data || data.length === 0) {
+                historyStats.innerHTML = `
+                    <strong>📊 Estadísticas del Historial</strong><br>
+                    <small>No hay conversiones guardadas en la base de datos</small>
+                `;
+                dbHistoryList.innerHTML = '<div class="db-history-item">No hay registros disponibles</div>';
+                return;
+            }
+
+            // Mostrar estadísticas
+            const totalConversions = data.length;
+            const conversionTypes = [...new Set(data.map(item => item.tipo))];
+            const latestDate = new Date(Math.max(...data.map(item => new Date(item.registro))));
+            
+            historyStats.innerHTML = `
+                <strong>📊 Estadísticas del Historial</strong><br>
+                <small>Total de conversiones: ${totalConversions}</small><br>
+                <small>Tipos diferentes: ${conversionTypes.length}</small><br>
+                <small>Última conversión: ${latestDate.toLocaleString('es-ES')}</small>
+            `;
+
+            // Mostrar lista de conversiones (más recientes primero)
+            const sortedData = data.sort((a, b) => new Date(b.registro) - new Date(a.registro));
+            
+            dbHistoryList.innerHTML = sortedData.map(item => {
+                const date = new Date(item.registro);
+                const formattedDate = date.toLocaleString('es-ES');
+                
+                return `
+                    <div class="db-history-item">
+                        <strong>ID: ${item.id} - Resultado: ${item.resultado}°</strong><br>
+                        <small><strong>Tipo:</strong> ${item.tipo}</small><br>
+                        <small><strong>Fecha:</strong> ${formattedDate}</small>
+                    </div>
+                `;
+            }).join('');
         }
 
         // Función principal para manejar la conversión
         async function handleConversion(e) {
             e.preventDefault();
             
-            const celsius = parseFloat(celsiusInput.value);
+            const temperature = parseFloat(temperatureInput.value);
+            const conversionType = conversionTypeSelect.value;
             const apiUrl = apiUrlInput.value.trim();
             
-            if (isNaN(celsius)) {
+            if (isNaN(temperature)) {
                 showResult('Por favor ingresa un valor numérico válido', 'error');
                 return;
             }
@@ -379,11 +569,12 @@
 
             console.log('🔍 Diagnóstico de conexión:');
             console.log('URL de API:', apiUrl);
-            console.log('Datos a enviar:', { celsius: celsius, timestamp: new Date().toISOString() });
+            console.log('Datos a enviar:', { temperature: temperature, conversionType: conversionType, timestamp: new Date().toISOString() });
 
             try {
-                // Calcular Fahrenheit antes de enviar
-                const fahrenheit = (celsius * 9/5) + 32;
+                // Realizar la conversión
+                const conversionResult = convertTemperature(temperature, conversionType);
+                const conversionTypeName = getConversionTypeName(conversionType);
                 
                 // Realizar petición POST a la API con el formato correcto
                 const response = await fetch(apiUrl, {
@@ -393,8 +584,8 @@
                         'Accept': 'application/json'
                     },
                     body: JSON.stringify({
-                        resultado: parseFloat(fahrenheit.toFixed(2)), // Decimal con 2 decimales
-                        tipo: "Celsius a Fahrenheit",
+                        resultado: parseFloat(conversionResult.result.toFixed(2)), // Decimal con 2 decimales
+                        tipo: conversionTypeName,
                         registro: new Date().toISOString() // Timestamp ISO
                     })
                 });
@@ -413,14 +604,19 @@
                 // Mostrar resultado exitoso
                 showResult(
                     `✅ Conversión exitosa!<br>
-                     <strong>${celsius}°C = ${fahrenheit.toFixed(2)}°F</strong><br>
+                     <strong>${temperature}°${conversionResult.sourceUnit} = ${conversionResult.result.toFixed(2)}°${conversionResult.resultUnit}</strong><br>
                      <small>Guardado en BD - ID: ${data.id}</small><br>
                      <small>Fecha: ${new Date(data.registro).toLocaleString()}</small>`, 
                     'success'
                 );
 
-                // Agregar al historial
-                addToHistory(celsius, fahrenheit);
+                // Agregar al historial local
+                addToHistory(temperature, conversionResult.result, conversionResult.sourceUnit, conversionResult.resultUnit, conversionTypeName);
+
+                // Si el historial de BD está visible, actualizarlo
+                if (dbHistoryVisible) {
+                    setTimeout(() => loadDbHistory(), 1000); // Pequeña pausa para que se guarde en BD
+                }
 
             } catch (error) {
                 console.error('❌ Error completo:', error);
@@ -465,14 +661,17 @@
             }
         }
 
-        // Función para agregar al historial
-        function addToHistory(celsius, fahrenheit) {
+        // Función para agregar al historial local
+        function addToHistory(inputTemp, outputTemp, inputUnit, outputUnit, conversionType) {
             const now = new Date();
             const timeString = now.toLocaleString('es-ES');
             
             conversions.unshift({
-                celsius: celsius,
-                fahrenheit: fahrenheit,
+                inputTemp: inputTemp,
+                outputTemp: outputTemp,
+                inputUnit: inputUnit,
+                outputUnit: outputUnit,
+                conversionType: conversionType,
                 timestamp: timeString
             });
 
@@ -484,7 +683,7 @@
             updateHistoryDisplay();
         }
 
-        // Función para actualizar la visualización del historial
+        // Función para actualizar la visualización del historial local
         function updateHistoryDisplay() {
             if (conversions.length === 0) {
                 historySection.style.display = 'none';
@@ -494,7 +693,8 @@
             historySection.style.display = 'block';
             historyList.innerHTML = conversions.map(conversion => 
                 `<div class="history-item">
-                    <strong>${conversion.celsius}°C → ${conversion.fahrenheit.toFixed(1)}°F</strong>
+                    <strong>${conversion.inputTemp}°${conversion.inputUnit} → ${conversion.outputTemp.toFixed(2)}°${conversion.outputUnit}</strong>
+                    <br><small>${conversion.conversionType}</small>
                     <br><small>${conversion.timestamp}</small>
                 </div>`
             ).join('');
@@ -502,18 +702,19 @@
 
         // Función para limpiar el formulario
         function clearForm() {
-            celsiusInput.value = '';
+            temperatureInput.value = '';
             resultDiv.style.display = 'none';
-            celsiusInput.focus();
+            temperatureInput.focus();
         }
 
-        // Enfocar el input al cargar la página
+        // Inicializar etiquetas al cargar la página
         window.addEventListener('load', () => {
-            celsiusInput.focus();
+            updateLabels();
+            temperatureInput.focus();
         });
 
         // Permitir conversión con Enter
-        celsiusInput.addEventListener('keypress', (e) => {
+        temperatureInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 handleConversion(e);
             }
