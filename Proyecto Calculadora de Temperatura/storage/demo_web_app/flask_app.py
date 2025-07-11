@@ -1,6 +1,7 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, session
 from flask_cors import CORS
 from datetime import datetime
+import os
 import logging
 
 # Configurar logging
@@ -8,16 +9,21 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+app.secret_key = 'semestral'
 CORS(app)  # Habilitar CORS para todas las rutas
 
 # Simulación de base de datos en memoria
 conversiones_db = []
 
+users= {
+    'admin': 'password123'
+}
+
 @app.route('/')
 def index():
     """Página principal del conversor"""
     return render_template('index.html')
-
+     
 @app.route('/api/conversiones/temperatura', methods=['POST'])
 def convertir_temperatura():
     """Endpoint para guardar conversiones de temperatura"""
@@ -78,6 +84,11 @@ def not_found(error):
 @app.errorhandler(500)
 def internal_error(error):
     return jsonify({'error': 'Error interno del servidor'}), 500
-
+   
+@app.route('/logout')
+def logout():
+    session.pop('username', None)
+    return redirect(url_for('index'))
+    
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5050, debug=True)
