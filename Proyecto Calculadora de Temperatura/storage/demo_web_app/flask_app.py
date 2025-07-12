@@ -3,6 +3,7 @@ from flask_cors import CORS
 from datetime import datetime
 import os
 import logging
+import requests
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
@@ -15,49 +16,10 @@ CORS(app)  # Habilitar CORS para todas las rutas
 # Simulación de base de datos en memoria
 conversiones_db = []
 
-users= {
-    'admin': 'password123'
-}
-
 @app.route('/')
 def index():
     """Página principal del conversor"""
-    return render_template('index.html')
-     
-@app.route('/api/conversiones/temperatura', methods=['POST'])
-def convertir_temperatura():
-    """Endpoint para guardar conversiones de temperatura"""
-    try:
-        data = request.get_json()
-        
-        # Validar datos recibidos
-        if not data:
-            return jsonify({'error': 'No se recibieron datos'}), 400
-            
-        if 'resultado' not in data:
-            return jsonify({'error': 'Falta el campo resultado'}), 400
-            
-        # Crear registro de conversión
-        conversion = {
-            'id': len(conversiones_db) + 1,
-            'resultado': float(data['resultado']),
-            'tipo': data.get('tipo', 'Celsius a Fahrenheit'),
-            'registro': data.get('registro', datetime.now().isoformat())
-        }
-        
-        # Guardar en "base de datos"
-        conversiones_db.append(conversion)
-        
-        logger.info(f"Nueva conversión guardada: {conversion}")
-        
-        return jsonify(conversion), 201
-        
-    except ValueError as e:
-        logger.error(f"Error de valor: {e}")
-        return jsonify({'error': 'Valor numérico inválido'}), 400
-    except Exception as e:
-        logger.error(f"Error interno: {e}")
-        return jsonify({'error': 'Error interno del servidor'}), 500
+    return render_template('conver.html')
 
 @app.route('/api/conversiones', methods=['GET'])
 def obtener_conversiones():
@@ -84,11 +46,47 @@ def not_found(error):
 @app.errorhandler(500)
 def internal_error(error):
     return jsonify({'error': 'Error interno del servidor'}), 500
-   
-@app.route('/logout')
+    
+ #Render de la página de login
+@app.route('/login', methods=['GET'])
+def loginp():
+    return render_template('index.html')
+        #username = request.form['username']
+        #password = request.form['passsword']
+        #if username in users and users [username] == password:
+            #session['username'] = username 
+            #return redirect(url_for('conver'))
+        #else:
+            #flash('Credenciales erroneas')
+            
+@app.route('/api/login', methods=['POST'])
+def login():
+    url = 'http://172.30.0.20/api/user'
+    headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+    
+    try:
+        response = requests.get(url, headers)
+
+        return jsonify({
+            'status': 'OK',
+            'isSuccess': True,
+            'message': 'login ok',
+            'timestamp': datetime.now().isoformat()
+        }), 200
+
+    except requests.exceptions.RequestException as e:
+        print("Excepción de red:", e)
+        return jsonify({
+            'status': 'ERROR',
+            'isSuccess': False,
+            'message': 'No se pudo contactar con el servidor de usuarios',
+            'timestamp': datetime.now().isoformat()
+        }), 500
+        
+@app.route('/api/logout')
 def logout():
     session.pop('username', None)
     return redirect(url_for('index'))
-    
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5050, debug=True)
