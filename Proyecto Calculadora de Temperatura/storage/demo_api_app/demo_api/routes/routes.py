@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from sqlalchemy import select, insert
 from sqlalchemy.engine import Result
-from database.database import engine, ct
-from schemas.schemas import ConversionTemperaturaSchema
+from database.database import engine, ct, ut
+from schemas.schemas import ConversionTemperaturaSchema, userSchema
 from typing import List
 
 ####################################### Router para diferentes temperaturas
@@ -19,7 +19,7 @@ def get_conversion_temperatura():
     except Exception as e:
         print(f"Error inesperado: {e}")  # Imprimir el error en la consola
         raise HTTPException(status_code=500, detail="Error al consultar la base de datos.")
-    
+   
 @temperatura_router.post("/api/conversiones/temperatura", response_model=ConversionTemperaturaSchema)
 def create_conversion_temperatura(conversion: ConversionTemperaturaSchema):
     try:
@@ -36,3 +36,15 @@ def create_conversion_temperatura(conversion: ConversionTemperaturaSchema):
     except Exception as e:
         print(f"Error inesperado: {e}")  # Imprimir el error en la consola
         raise HTTPException(status_code=500, detail="Error al insertar datos en la base de datos.")
+
+@temperatura_router.get("/api/user", response_model=List[userSchema])
+def get_user():
+    try:
+        with engine.connect() as connection:
+            query = select(ut)
+            result: Result = connection.execute(query)
+            uma = [userSchema(**dict(zip(result.keys(), row))) for row in result]
+            return uma
+    except Exception as e:
+        print(f"Error inesperado: {e}")  # Imprimir el error en la consola
+        raise HTTPException(status_code=500, detail="Error al consultar la base de datos.")
