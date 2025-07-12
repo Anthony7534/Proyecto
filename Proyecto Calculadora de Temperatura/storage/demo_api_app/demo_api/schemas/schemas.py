@@ -10,3 +10,11 @@ class ConversionTemperaturaSchema(BaseModel):
 
     class Config:
         from_attributes = True  # Modificado para Pydantic V2
+        
+class userSchema(BaseModel):
+    id: Optional[int] = None
+    username: Optional[str] = None
+    password: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
