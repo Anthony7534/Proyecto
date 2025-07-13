@@ -264,7 +264,21 @@
             text-align: center;
         }
 
-        @media (max-width: 600px) {
+        .config-toggle {
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .config-toggle button {
+            background: linear-gradient(45deg, #95a5a6, #7f8c8d);
+            font-size: 1em;
+            padding: 10px 30px;
+            margin: 0;
+        }
+
+        .config-toggle button:hover {
+            background: linear-gradient(45deg, #7f8c8d, #95a5a6);
+        }
             .container {
                 padding: 30px 20px;
                 margin: 10px;
@@ -285,7 +299,7 @@
         <div class="thermometer">🌡️</div>
         <h1>Conversor de Temperatura</h1>
         
-        <div class="api-config">
+        <div class="api-config" id="apiConfig" style="display: none;">
             <label for="apiUrl">API:</label>
             <input type="url" id="apiUrl" placeholder="http://localhost/api/conversiones/temperatura" 
                    value="http://localhost/api/conversiones/temperatura">
@@ -293,6 +307,10 @@
                 📋 Docs de tu API: <a href="http://localhost/docs#/" target="_blank">http://localhost/docs#/</a><br>
                 ✅ Endpoint configurado para FastAPI
             </small>
+        </div>
+
+        <div class="config-toggle">
+            <button type="button" id="configBtn">⚙️ Configurar API</button>
         </div>
 
         <form id="converterForm">
@@ -321,13 +339,13 @@
         <div id="result" class="result" style="display: none;"></div>
 
         <div class="history" id="historySection" style="display: none;">
-            <h3>📋 Historial de Conversiones en sesión</h3>
+            <h3>📋 Historial de Conversiones</h3>
             <div id="historyList"></div>
         </div>
 
         <div class="db-history" id="dbHistorySection" style="display: none;">
             <div class="db-history-stats" id="historyStats"></div>
-            <h3>🗃️ Historial de datos almacenados </h3>
+            <h3>🗃️ Historial Completo de Base de Datos</h3>
             <div id="dbHistoryList"></div>
         </div>
     </div>
@@ -336,6 +354,7 @@
         // Variables globales
         let conversions = [];
         let dbHistoryVisible = false;
+        let apiConfigVisible = false;
         
         // Elementos del DOM
         const form = document.getElementById('converterForm');
@@ -345,6 +364,7 @@
         const apiUrlInput = document.getElementById('apiUrl');
         const convertBtn = document.getElementById('convertBtn');
         const historyBtn = document.getElementById('historyBtn');
+        const configBtn = document.getElementById('configBtn');
         const clearBtn = document.getElementById('clearBtn');
         const resultDiv = document.getElementById('result');
         const historySection = document.getElementById('historySection');
@@ -352,10 +372,12 @@
         const dbHistorySection = document.getElementById('dbHistorySection');
         const dbHistoryList = document.getElementById('dbHistoryList');
         const historyStats = document.getElementById('historyStats');
+        const apiConfig = document.getElementById('apiConfig');
 
         // Event listeners
         form.addEventListener('submit', handleConversion);
         historyBtn.addEventListener('click', toggleDbHistory);
+        configBtn.addEventListener('click', toggleApiConfig);
         clearBtn.addEventListener('click', clearForm);
         conversionTypeSelect.addEventListener('change', updateLabels);
 
@@ -429,6 +451,21 @@
                 'kelvin-fahrenheit': 'Kelvin a Fahrenheit'
             };
             return names[type] || 'Conversión desconocida';
+        }
+
+        // Función para alternar la visibilidad de la configuración de API
+        function toggleApiConfig() {
+            if (apiConfigVisible) {
+                // Ocultar configuración
+                apiConfig.style.display = 'none';
+                configBtn.innerHTML = '⚙️ Configurar API';
+                apiConfigVisible = false;
+            } else {
+                // Mostrar configuración
+                apiConfig.style.display = 'block';
+                configBtn.innerHTML = '🙈 Ocultar Config';
+                apiConfigVisible = true;
+            }
         }
 
         // Función para alternar la visibilidad del historial de BD
