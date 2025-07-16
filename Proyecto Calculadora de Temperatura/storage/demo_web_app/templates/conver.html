@@ -19,6 +19,31 @@
             justify-content: center;
             align-items: center;
             padding: 20px;
+            position: relative;
+        }
+
+        .logout-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1em;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(231, 76, 60, 0.5);
         }
 
         .container {
@@ -279,6 +304,8 @@
         .config-toggle button:hover {
             background: linear-gradient(45deg, #7f8c8d, #95a5a6);
         }
+
+        @media (max-width: 600px) {
             .container {
                 padding: 30px 20px;
                 margin: 10px;
@@ -291,10 +318,21 @@
             .thermometer {
                 font-size: 2.5em;
             }
+            
+            .logout-btn {
+                top: 15px;
+                right: 15px;
+                padding: 10px 20px;
+                font-size: 0.9em;
+            }
         }
     </style>
 </head>
 <body>
+    <button class="logout-btn" onclick="logout()">
+        🚪 Cerrar Sesión
+    </button>
+
     <div class="container">
         <div class="thermometer">🌡️</div>
         <h1>Conversor de Temperatura</h1>
@@ -373,6 +411,16 @@
         const dbHistoryList = document.getElementById('dbHistoryList');
         const historyStats = document.getElementById('historyStats');
         const apiConfig = document.getElementById('apiConfig');
+
+        // Función para cerrar sesión
+        function logout() {
+            if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
+                // Aquí puedes agregar la lógica para cerrar sesión
+                // Por ejemplo, limpiar localStorage, redirigir a login, etc.
+                alert('Sesión cerrada exitosamente');
+                window.location.href = 'http://172.30.0.10:5050/login'; // Redirigir a página de login
+            }
+        }
 
         // Event listeners
         form.addEventListener('submit', handleConversion);
